@@ -1,0 +1,115 @@
+name: AWS Lambda Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  ENTITY: "ch"
+  ENV: "dev"
+  AWS_REGION: "us-east-1"
+  LAMBDA_FUNCTION_NAME: "ch-lmda-backend-use1-dev"
+  FUNCTION_DIR: "function"
+  MAJOR_NODE_VERSION: "18"
+
+jobs:
+  auth:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Set Account Number Mapping
+        id: set-account
+        run: |
+          UPPER_ENV=$(echo "${{ env.ENV }}" | tr '[:lower:]' '[:upper:]')
+          ACTUAL_ACCOUNT_NUMBER="AN_CH_${UPPER_ENV}"
+          AWS_ACCOUNT_ID=${{ env.ENV == 'dev' && vars.AN_CH_DEV || vars.AN_CH_PROD }}
+          echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" >> $GITHUB_ENV
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.ENTITY }}-iam-shared-deployment-role-${{ env.ENV }}
+          role-session-name: GitHubActionsOIDCSession
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+
+  build:
+    runs-on: ubuntu-22.04
+    needs: auth
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y curl awscli zip tzdata git jq
+          curl -sL https://deb.nodesource.com/setup_${{ env.MAJOR_NODE_VERSION }}.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+
+      - name: Build Lambda Function
+        working-directory: ${{ env.FUNCTION_DIR }}
+        run: |
+          npm install
+          npm run build
+          mkdir -p ../artifacts/function
+          cp ./.serverless/lambda.zip ../artifacts/function/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-artifact
+          path: artifacts/
+          retention-days: 1
+
+  deploy:
+    runs-on: ubuntu-22.04
+    needs: [auth, build]
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y curl awscli zip tzdata git jq
+          curl -sL https://deb.nodesource.com/setup_${{ env.MAJOR_NODE_VERSION }}.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          AWS_ACCOUNT_ID=${{ env.ENV == 'dev' && vars.AN_CH_DEV || vars.AN_CH_PROD }}
+          echo "AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" >> $GITHUB_ENV
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: lambda-artifact
+          path: artifacts/
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/${{ env.ENTITY }}-iam-shared-deployment-role-${{ env.ENV }}
+          role-session-name: GitHubActionsOIDCSession
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+
+      - name: Deploy Lambda Function
+        run: |
+          echo "Updating Lambda function code..."
+          if [[ -f artifacts/function/lambda.zip ]]; then
+            aws lambda update-function-code \
+              --function-name "${{ env.LAMBDA_FUNCTION_NAME }}" \
+              --zip-file fileb://artifacts/function/lambda.zip \
+              --region "${{ env.AWS_REGION }}"
+          fi
+          echo "Lambda function deployment complete."

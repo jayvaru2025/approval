@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "sourceMap": false,
+    "target": "ES6",
+    "types": ["node"],
+    "outDir": "./build",
+    "noImplicitAny": false,
+    "rootDir": "./",
+    "useUnknownInCatchVariables": false,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*.ts", "index.ts", "serverless-notwork.ts", "scripts/*"],
+  "exclude": ["node_modules/**/*", ".serverless/**/*", ".webpack/**/*", "_warmup/**/*", ".vscode/**/*"]
+}

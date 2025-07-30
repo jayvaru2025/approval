@@ -14,7 +14,7 @@ env:
 jobs:
   auth:
     runs-on: ubuntu-latest
-    # environment: ${{ github.event.inputs.ENV }}
+    environment: dev
     permissions:
       id-token: write
       contents: read
@@ -70,7 +70,7 @@ jobs:
   deploy:
     runs-on: ubuntu-22.04
     needs: [auth, build]
-    environment: ${{ github.event.inputs.ENV }}
+    environment: dev
     permissions:
       id-token: write
       contents: read

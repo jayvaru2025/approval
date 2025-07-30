@@ -14,7 +14,7 @@ env:
 jobs:
   auth:
     runs-on: ubuntu-latest
-    environment: dev
+    # environment: ${{ github.event.inputs.ENV }}
     permissions:
       id-token: write
       contents: read
@@ -70,22 +70,22 @@ jobs:
   deploy:
     runs-on: ubuntu-22.04
     needs: [auth, build]
-    environment: dev
+    environment: ${{ github.event.inputs.ENV }}
     permissions:
       id-token: write
       contents: read
 
     steps:
-      - name: Wait for Manual Approval
-        uses: trstringer/manual-approval@v1.11.0
-        with:
-          secret: ${{ secrets.REPO_ACCESS_TOKEN_ }} # Use the existing token
-          approvers: jinsi14
-          minimum-approvals: 1 # Number of approvals needed to proceed
-          issue-title: "Deploying Lambda to ${{ github.event.inputs.ENV }}"
-          issue-body: "Please approve or deny the deployment of ${{ github.event.inputs.LAMBDA_FUNCTION_NAME }} to ${{ github.event.inputs.ENV }} environment."
-          exclude-workflow-initiator-as-approver: true # Prevent self-approval
-          fail-on-denial: true # Fail the workflow if denied
+      # - name: Wait for Manual Approval
+      #   uses: trstringer/manual-approval@v1.11.0
+      #   with:
+      #     secret: ${{ secrets.REPO_ACCESS_TOKEN_ }} # Use the existing token
+      #     approvers: jinsi14
+      #     minimum-approvals: 1 # Number of approvals needed to proceed
+      #     issue-title: "Deploying Lambda to ${{ github.event.inputs.ENV }}"
+      #     issue-body: "Please approve or deny the deployment of ${{ github.event.inputs.LAMBDA_FUNCTION_NAME }} to ${{ github.event.inputs.ENV }} environment."
+      #     exclude-workflow-initiator-as-approver: true # Prevent self-approval
+      #     fail-on-denial: true # Fail the workflow if denied
 
       - name: Checkout Repository
         uses: actions/checkout@v4

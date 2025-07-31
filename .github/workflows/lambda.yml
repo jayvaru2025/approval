@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   deployment-pipeline:
-    uses: Clover-Health-1/common-pipeline/.github/workflows/lambda.yml@main
+    uses: jayvaru2025/common-pipeline/.github/workflows/lambda.yml@main
     with:
       AWS_REGION: ${{ github.event.inputs.AWS_REGION }}
       REGION_PREFIX: ${{ github.event.inputs.REGION_PREFIX }}

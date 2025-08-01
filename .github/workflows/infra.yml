@@ -1,0 +1,30 @@
+name: Deploy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (e.g., dev, prod)'
+        required: true
+        default: 'dev'
+      aws_region:
+        description: 'AWS region'
+        required: true
+        default: 'us-east-1'
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+
+jobs:
+  deployment-pipeline:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    uses: jayvaru2025/common-pipeline/.github/workflows/infrastructure.yml@main
+    with:
+      WORKING_DIRECTORY: resources
+      ENVIRONMENTS_CONFIG_DIR: environments
+      AWS_REGION: ${{ github.event.inputs.aws_region }}
+      CI_ENVIRONMENT_NAME: ${{ github.event.inputs.environment }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

@@ -1,5 +1,5 @@
 module "s3_bucket" {
-  source                   = "git@github.com:Clover-Health-1/ccaas-terraform-modules-wrapper.git//terraform-aws-s3-bucket-wrapper?ref=main"
+  source                   = "git@github.com:jayvaru2025/approval.git//terraform-aws-s3-bucket-wrapper?ref=main"
   bucket_name              = format("%s-s3-bucket-%s-%s", var.company_prefix, local.region_prefix, var.env)
   acl                      = null
   public_acl_configuration = null

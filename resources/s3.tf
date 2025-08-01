@@ -1,4 +1,4 @@
-module "s3_call_recording" {
+module "s3_bucket" {
   source                   = "git@github.com:Clover-Health-1/ccaas-terraform-modules-wrapper.git//terraform-aws-s3-bucket-wrapper?ref=main"
   bucket_name              = format("%s-s3-bucket-%s-%s", var.company_prefix, local.region_prefix, var.env)
   acl                      = null
